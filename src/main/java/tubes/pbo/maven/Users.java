@@ -1,11 +1,28 @@
 package tubes.pbo.maven;
-public class Users {
+
+import java.io.Serializable;
+
+public class Users implements Serializable {
     private String name;
     private String email;
     private String phone;
     private String address;
     private String religion;
     private String password;
+    private int id;
+
+    public Users(String name, String email, String phone, String address, String religion, String password) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.address = address;
+        this.religion = religion;
+        this.password = password;
+    }
+
+    public Users() {
+
+    }
 
     public String getName() {
         return name;
@@ -54,4 +71,13 @@ public class Users {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public int getId () {
+        return id;
+    }
+
+    public void setId (int id ) {
+        this.id = id ;
+    }
+
 }

@@ -1,13 +1,15 @@
 package tubes.pbo.maven;
-import javax.imageio.ImageIO;
+
+import tubes.pbo.maven.form;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.sql.*;
 
 public class LoginForm extends JDialog {
+    private int authenticatedUserId;
     private JTextField tfEmail;
     private JPasswordField pfPassword;
     private JButton btnOK;
@@ -23,14 +25,6 @@ public class LoginForm extends JDialog {
         setLocationRelativeTo(parent);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-        ImageIcon logo;
-//        try {
-//            logo = new ImageIcon(ImageIO.read(getClass().getResourceAsStream("resources/key (1).png")));
-//        } catch (IOException e) {
-//            // Handle the exception
-//            System.out.println("Error loading image: " + e.getMessage());
-//            logo = null;
-//        }
         btnCancel.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -47,11 +41,12 @@ public class LoginForm extends JDialog {
                 Users user = getAuthenticatedUser(email, password);
 
                 if (user != null) {
-                    dispose();
                     System.out.println("Successful Authentication of: " + user.getName());
                     System.out.println("Email: " + user.getEmail());
                     System.out.println("Phone: " + user.getPhone());
                     System.out.println("Address: " + user.getAddress());
+                    authenticatedUserId = user.getId(); // Perbarui authenticatedUserId
+                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(LoginForm.this,
                             "Email Password Invalid",
@@ -63,6 +58,10 @@ public class LoginForm extends JDialog {
 
         pack();
         setVisible(true); // Dipindahkan ke sini setelah semua komponen ditambahkan
+    }
+
+    public int getAuthenticatedUserId() {
+        return authenticatedUserId;
     }
 
     private Users getAuthenticatedUser(String email, String password) {
@@ -83,6 +82,7 @@ public class LoginForm extends JDialog {
 
             if (resultSet.next()) {
                 user = new Users();
+                user.setId(resultSet.getInt("id")); // Perbarui id pada objek user
                 user.setName(resultSet.getString("name"));
                 user.setEmail(resultSet.getString("email"));
                 user.setPhone(resultSet.getString("phone"));
@@ -98,8 +98,15 @@ public class LoginForm extends JDialog {
         return user;
     }
 
-    public static void main(String[] args) {
+    private void openRegistrationForm() {
+        form registrationForm = new form();
+        registrationForm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        registrationForm.setVisible(true);
+    }
 
-        var loginForm = new LoginForm(null);
+    public static void main(String[] args) {
+        LoginForm loginForm = new LoginForm(null);
+        int authenticatedUserId = loginForm.getAuthenticatedUserId();
+        System.out.println("Authenticated User ID: " + authenticatedUserId);
     }
 }

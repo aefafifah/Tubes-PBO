@@ -10,22 +10,18 @@ public class KonekDatabase2 {
     private String username = "root";
     private String password = "#Deaenze123";
 
-    //public Connection getConn() throws SQLException {
-//    return DriverManager.getConnection(url,username,password);
-//}
-    public void getInput2(boolean ngantuk ,boolean capek) throws SQLException  {
+    public void getInput2(int userId, boolean ngantuk, boolean capek) throws SQLException {
 
-        try(Connection connection = DriverManager.getConnection(url,username,password)){
-            String sql = "INSERT INTO sehat (ngantuk, capek) VALUES (?, ?)";
-            try(PreparedStatement statement = connection.prepareStatement(sql)){
-                statement.setBoolean(1,ngantuk);
-                statement.setBoolean(2,capek);
+        try (Connection connection = DriverManager.getConnection(url, username, password)) {
+            String sql = "INSERT INTO sehat (id_user, ngantuk, capek) VALUES (?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, userId);
+                statement.setBoolean(2, ngantuk);
+                statement.setBoolean(3, capek);
                 statement.executeUpdate();
-            }
-            catch (SQLException sqlException){
+            } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
         }
-
     }
 }

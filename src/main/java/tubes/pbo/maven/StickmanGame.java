@@ -1,29 +1,26 @@
 package tubes.pbo.maven;
-import Classes.ReminderFitur;
+
+import tubes.pbo.maven.Classes.KonekDatabase3;
+import tubes.pbo.maven.Classes.ReminderFitur;
 import tubes.pbo.maven.Classes.KonekDatabase;
 import tubes.pbo.maven.Classes.KonekDatabase2;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class StickmanGame extends JFrame {
-    private GamePanel gamePanel;
-
-    private StickmanGame game;
-    private boolean imanActive = false;
-
-    private boolean healthTrack = false;
-
+    private final GamePanel gamePanel;
+    private int userId;
 
     public StickmanGame() {
         setTitle("Stickman Game");
@@ -31,12 +28,10 @@ public class StickmanGame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-        this.game = this;
 
-        gamePanel = new GamePanel();
+        this.gamePanel = new GamePanel();
         add(gamePanel);
-        imanActive = false;
-        healthTrack = false;
+
 
         addKeyListener(new KeyListener() {
             @Override
@@ -55,115 +50,151 @@ public class StickmanGame extends JFrame {
 
         setFocusable(true);
 
-        Timer timer = new Timer(0, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                gamePanel.updateStickman();
-                if (gamePanel.checkCollision()) {
-                    ((Timer) e.getSource()).stop();
-                    imanActive = true;
-                    healthTrack = true;
+        Timer timer = new Timer(0, e -> {
+            gamePanel.updateStickman();
+            if (gamePanel.checkCollision()) {
+                ((Timer) e.getSource()).stop();
 
+                JOptionPane.showMessageDialog(
+                        StickmanGame.this,
+                        "Game Over - hayolo ko nabrak!",
+                        "Game Over",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
 
-                    JOptionPane.showMessageDialog(StickmanGame.this, "Game Over - Stickman Tersandung!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
-                    int stressLevel = Integer.valueOf(JOptionPane.showInputDialog("Masukkan level stress (1-10)"));
-                    int jarakTuhanLevel = Integer.valueOf(JOptionPane.showInputDialog("Masukkan level jauh dari tuhan (1-10)"));
-                    boolean Ngantuk = JOptionPane.showConfirmDialog(null, "Apakah Anda ngantuk?") == JOptionPane.YES_OPTION;
-                    boolean Capek = JOptionPane.showConfirmDialog(null, "Apakah Anda capek?") == JOptionPane.YES_OPTION;
-
-                    KonekDatabase konekDatabase = new KonekDatabase();
-                    try {
-                        konekDatabase.getInput(stressLevel, jarakTuhanLevel);
-                    } catch (SQLException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    KonekDatabase2 konekDatabase2 = new KonekDatabase2();
-                    try{
-                        konekDatabase2.getInput2(Ngantuk,Capek);
-                    } catch (SQLException exc){
-                        throw new RuntimeException(exc);
-                    }
-
-                    if (stressLevel > 5 || jarakTuhanLevel > 5 || Ngantuk || Capek) {
-                        JOptionPane.showMessageDialog(StickmanGame.this, "Kamu perlu beribadah atau istirahat terlebih dahulu.\nGame akan di-freeze selama 15 menit.", "Peringatan", JOptionPane.WARNING_MESSAGE);
-                        long freezeStartTime = System.currentTimeMillis();
-                        Timer freezeTimer = new Timer(15 * 60 * 1000, new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                // Unfreeze the game after 15 minutes
-                                JOptionPane.showMessageDialog(StickmanGame.this, "Pastikan iman kamu selalu terjaga ya! Selamat bermain kembali!", "Peringatan", JOptionPane.INFORMATION_MESSAGE);
-                                ((Timer) e.getSource()).start();
-                                requestFocusInWindow();
-                                setVisible(true);
-                                setFocusable(true);
-                            }
-
-                        });
-
-                        freezeTimer.start();
-                        setFocusable(false);
-
-                    } else {
-                        imanActive = false;
-                        healthTrack = false;
-                        requestFocusInWindow();
-                        setVisible(true);
-
-
-                    }
-
-
-                    gamePanel.restartGame();
-                    ((Timer) e.getSource()).start();
-                }
-
-
-                gamePanel.repaint();
+                handleGameEnd();
+                gamePanel.restartGame();
+                ((Timer) e.getSource()).start();
             }
+
+            gamePanel.repaint();
         });
+
         timer.start();
-
         setVisible(true);
-
-
     }
 
+    private void handleGameEnd() {
+        int stressLevel = Integer.parseInt(JOptionPane.showInputDialog("Masukkan level stress (1-10)"));
+        int jarakTuhanLevel = Integer.parseInt(JOptionPane.showInputDialog("Masukkan level jauh dari tuhan (1-10)"));
+        boolean Ngantuk = JOptionPane.showConfirmDialog(null, "Apakah Anda ngantuk?") == JOptionPane.YES_OPTION;
+        boolean Capek = JOptionPane.showConfirmDialog(null, "Apakah Anda capek?") == JOptionPane.YES_OPTION;
+
+        KonekDatabase konekDatabase = new KonekDatabase();
+        try {
+            konekDatabase.getInput(userId,stressLevel, jarakTuhanLevel);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        KonekDatabase2 konekDatabase2 = new KonekDatabase2();
+        try {
+            konekDatabase2.getInput2(userId, Ngantuk, Capek);
+        } catch (SQLException exc) {
+            throw new RuntimeException(exc);
+        }
+
+        if (stressLevel > 5 || jarakTuhanLevel > 5 || Ngantuk || Capek) {
+            JOptionPane.showMessageDialog(
+                    StickmanGame.this,
+                    "Kamu perlu beribadah atau istirahat terlebih dahulu.\nGame akan di-freeze selama 15 menit.",
+                    "Peringatan",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            Timer freezeTimer = new Timer(15 * 60 * 1000, e -> {
+                JOptionPane.showMessageDialog(
+                        StickmanGame.this,
+                        "Pastikan iman kamu selalu terjaga ya! Selamat bermain kembali!",
+                        "Peringatan",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                ((Timer) e.getSource()).start();
+                requestFocusInWindow();
+                setVisible(true);
+                setFocusable(true);
+            });
+
+            freezeTimer.start();
+            setFocusable(false);
+        } else {
+            requestFocusInWindow();
+            setVisible(true);
+        }
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            StickmanGame game = new StickmanGame();
-            LoginForm loginForm = new LoginForm(game); // Gunakan instance game
-            loginForm.setVisible(true); // Menampilkan form login terlebih dahulu
+            boolean isAkun = JOptionPane.showConfirmDialog(null, "Apakah sudah punya akun?") == JOptionPane.YES_OPTION;
 
-            // Contoh panggilan metode saat tombol "Masuk" atau "Register" diklik
-            // ...
-            // Kemudian, tutup form login dan mulai menjalankan game Stickman
-            loginForm.dispose();
+            if (isAkun) {
+                LoginForm loginForm = new LoginForm(new JFrame());
+                loginForm.setVisible(true);
+                int authenticatedUserId = loginForm.getAuthenticatedUserId();
+                System.out.println("idmu adalah " + authenticatedUserId);
+                StickmanGame game = new StickmanGame();
+                game.setUserId(authenticatedUserId);
+                game.gamePanel.setUserId(authenticatedUserId);
+            } else {
+                int registeredUserId = showRegistrationForm();
+                if (registeredUserId != -1) {
+                    StickmanGame game = new StickmanGame();
+                    game.setUserId(registeredUserId);
+                    game.gamePanel.setUserId(registeredUserId);
+                } else {
+                    System.out.println("Registration failed. Exiting...");
+                }
+            }
         });
     }
 
+    private static int showRegistrationForm() {
+        form registrationForm = new form();
+        registrationForm.setContentPane(registrationForm.tpt);
+        registrationForm.setTitle("REGISTRATION FORM....");
+        registrationForm.setSize(600, 400);
+        registrationForm.setVisible(true);
+        registrationForm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // Wait until the registration form is closed
+        registrationForm.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                int registeredUserId = registrationForm.getRegisteredUserId();
+                if (registeredUserId != -1) {
+                    StickmanGame game = new StickmanGame();
+                    game.setUserId(registeredUserId);
+                } else {
+                    System.out.println("Registration failed. Exiting...");
+                }
+            }
+        });
+
+        return registrationForm.getRegisteredUserId();
+    }
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+}
+
     class GamePanel extends JPanel {
+        private int userId;
         private int stickmanX = 50;
         private int stickmanY = 450;
-        private int jumpHeight = 60;
         private int jumpCount = 0;
         private boolean isJumping = false;
         //    private JButton restartButton;
         private boolean gameOver = false;
-        private int obstacleX = 300;
-        private int obstacleY = 420;
         private boolean mahkotaDiperoleh = false;
-        private ReminderFitur reminderFitur = new ReminderFitur();
-        private Calendar calendar = Calendar.getInstance();
-        private int crownX = 700;
-        private int crownY = 150;
+        private final ReminderFitur reminderFitur = new ReminderFitur();
+        private final int crownX = 730;
+        private final int crownY = 170;
         private boolean hasCrown = false;
-        private int[] starCoordinates = new int[100];
-        private List<Awan> awanList = new ArrayList<>();
-        private boolean isOnBlock = false;
+        private final int[] starCoordinates = new int[100];
+        private final List<Awan> awanList = new ArrayList<>();
 
         // Tambahkan List untuk menyimpan bounds blok biru
-        private List<Rectangle> obstacleBoundsList = new ArrayList<>();
+        private final List<Rectangle> obstacleBoundsList = new ArrayList<>();
 
         public void moveStickman(int keyCode) {
             if (keyCode == KeyEvent.VK_RIGHT) {
@@ -178,6 +209,9 @@ public class StickmanGame extends JFrame {
                 jump();
             }
         }
+        public void setUserId(int userId) {
+            this.userId = userId;
+        }
 
         public GamePanel() {
             setLayout(null);
@@ -189,16 +223,37 @@ public class StickmanGame extends JFrame {
             awanList.add(new Awan(20, 20));
             awanList.add(new Awan(400, 300));
 
+            obstacleBoundsList.add(new Rectangle(150, 150, 50, 50));
+            obstacleBoundsList.add(new Rectangle(50, 250, 50, 50));
+            obstacleBoundsList.add(new Rectangle(50, 350, 50, 50));
+            obstacleBoundsList.add(new Rectangle(150, 450, 50, 50));
+            obstacleBoundsList.add(new Rectangle(50, 550, 50, 50));
 
-            obstacleBoundsList.add(new Rectangle(100, 300, 50, 50));
-            obstacleBoundsList.add(new Rectangle(500, 400, 50, 50));
-            obstacleBoundsList.add(new Rectangle(700, 300, 50, 50));
-            // Tambahkan blok biru tambahan jika diperlukan
-            obstacleBoundsList.add(new Rectangle(100, 200, 50, 50));
-            obstacleBoundsList.add(new Rectangle(30, 40, 50, 50));
-            obstacleBoundsList.add(new Rectangle(60, 70, 50, 50));
-            obstacleBoundsList.add(new Rectangle(170, 80, 50, 50));
-            obstacleBoundsList.add(new Rectangle(600, 80, 50, 50));
+            obstacleBoundsList.add(new Rectangle(150, 550, 50, 50));
+            obstacleBoundsList.add(new Rectangle(200, 50, 50, 50));
+            obstacleBoundsList.add(new Rectangle(350, 150, 50, 50));
+            obstacleBoundsList.add(new Rectangle(450, 150, 50, 50));
+            obstacleBoundsList.add(new Rectangle(500, 100, 50, 50));
+
+            obstacleBoundsList.add(new Rectangle(250, 150, 50, 50));
+            obstacleBoundsList.add(new Rectangle(160, 350, 50, 50));
+            obstacleBoundsList.add(new Rectangle(260, 350, 50, 50));
+            obstacleBoundsList.add(new Rectangle(350, 450, 50, 50));
+            obstacleBoundsList.add(new Rectangle(440, 450, 50, 50));
+
+            obstacleBoundsList.add(new Rectangle(350, 250, 50, 50));
+            obstacleBoundsList.add(new Rectangle(300, 50, 50, 50));
+            obstacleBoundsList.add(new Rectangle(560, 150, 50, 50));
+            obstacleBoundsList.add(new Rectangle(380, 350, 50, 50));
+            obstacleBoundsList.add(new Rectangle(480, 270, 50, 50));
+
+            obstacleBoundsList.add(new Rectangle(490, 350, 50, 50));
+            obstacleBoundsList.add(new Rectangle(595, 290, 50, 50));
+            obstacleBoundsList.add(new Rectangle(560, 470, 50, 50));
+            obstacleBoundsList.add(new Rectangle(610, 360, 50, 50));
+            obstacleBoundsList.add(new Rectangle(695, 270, 50, 50));
+
+
         }
 
         //kondisiawal
@@ -216,6 +271,7 @@ public class StickmanGame extends JFrame {
             // jika tidak di atas blok biru
             if (isJumping) {
                 checkCollision();
+                int jumpHeight = 60;
                 if (jumpCount < jumpHeight) {
                     stickmanY -= 5;
                     jumpCount += 5;
@@ -236,7 +292,7 @@ public class StickmanGame extends JFrame {
                 return true;
             }
             if (!mahkotaDiperoleh && isCollidingWithCrown()) {
-                getMahkota();
+                getMahkota(userId);
                 mahkotaDiperoleh = true;
                 return false;
             }
@@ -284,19 +340,28 @@ public class StickmanGame extends JFrame {
             return stickmanBounds.intersects(crownBounds);
         }
 
-        private void getMahkota() {
+        private void getMahkota(int userId) {
             hasCrown = true;
             JOptionPane.showMessageDialog(this, "Selamat! Stickman mendapatkan mahkota.", "Game Berhasil", JOptionPane.INFORMATION_MESSAGE);
             String title = JOptionPane.showInputDialog("Masukkan judul pengingat: ");
             int hour = Integer.parseInt(JOptionPane.showInputDialog("Masukkan jam pengingat: "));
             int minute = Integer.parseInt(JOptionPane.showInputDialog("Masukkan menit pengingat: "));
             reminderFitur.addReminder(title, hour, minute);
-            //reminderFitur.checkReminders();
+
+            // Add this block to connect to the database and save the user ID
+            KonekDatabase3 konekDatabase3 = new KonekDatabase3();
+            try {
+                konekDatabase3.saveReminder(userId, title, hour, minute);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
             ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-            Runnable task = () -> reminderFitur.checkReminders();
+            Runnable task = reminderFitur::checkReminders;
             executorService.scheduleAtFixedRate(task, 0, 1, TimeUnit.MINUTES);
             resetGame();
         }
+
 
         @Override
         protected void paintComponent(Graphics g) {
@@ -339,20 +404,18 @@ public class StickmanGame extends JFrame {
             g.drawLine(700, 50, 700, 200);
             g.drawLine(680, 90, 860, 90); // Sinar kanan
             g.drawLine(680, 90, 580, 90); // Sinar kiri
-            g.setColor(Color.BLUE);
-            g.fillRect(obstacleX, obstacleY, 50, 50);
-            // Tambahkan blok biru tambahan
-            g.fillRect(200, 400, 50, 50);
-            g.fillRect(100, 300, 50, 50);
-            g.fillRect(500, 400, 50, 50);
-            g.fillRect(700, 300, 50, 50);
+            int tanda = 1;
+            for (Rectangle obstacleBounds : obstacleBoundsList) {
+                g.setColor(Color.BLUE);
+                g.fillRect((int) obstacleBounds.getX(), (int) obstacleBounds.getY(), (int) obstacleBounds.getWidth(), (int) obstacleBounds.getHeight());
 
-            // Tambahkan lebih banyak blok sesuai kebutuhan
-            g.fillRect(100, 200, 50, 50);
-            g.fillRect(30, 40, 50, 50);
-            g.fillRect(60, 70, 50, 50);
-            g.fillRect(170, 80, 50, 50);
-            g.fillRect(600, 80, 50, 50);
+                // Gambar tanda di posisi objek
+
+                g.setColor(Color.RED);
+                g.drawString("Tanda " + tanda, (int) obstacleBounds.getX(), (int) obstacleBounds.getY());
+                tanda++;
+            }
+
 
             if (!hasCrown) {
                 g.setColor(Color.RED);
@@ -400,14 +463,15 @@ public class StickmanGame extends JFrame {
             }
         }
 
-        public class Awan {
-            private int x;
-            private int y;
+        public static class Awan {
+            private final int x;
+            private final int y;
 
             public Awan(int x, int y) {
                 this.x = x;
                 this.y = y;
             }
+
             public void draw(Graphics g) {
                 g.setColor(Color.WHITE);
                 g.fillOval(x, y, 30, 15);
@@ -416,7 +480,8 @@ public class StickmanGame extends JFrame {
             }
         }
     }
-}
+
+
 
 
 

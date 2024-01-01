@@ -6,20 +6,21 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class KonekDatabase {
-private String url = "jdbc:mysql://localhost:3306/stickman";
-private String username = "root";
-private String password = "#Deaenze123";
 
-//public Connection getConn() throws SQLException {
+    //public Connection getConn() throws SQLException {
 //    return DriverManager.getConnection(url,username,password);
 //}
-public void getInput(int level_stress,int jauh_dari_tuhan) throws SQLException  {
+public void getInput(int id_user,int level_stress,int jauh_dari_tuhan) throws SQLException  {
 
-    try(Connection connection = DriverManager.getConnection(url,username,password)){
-        String sql = "INSERT INTO iman (level_stress, jauh_dari_tuhan) VALUES (?, ?)";
+    String url = "jdbc:mysql://localhost:3306/stickman";
+    String username = "root";
+    String password = "#Deaenze123";
+    try(Connection connection = DriverManager.getConnection(url, username, password)){
+        String sql = "INSERT INTO iman (user_id,level_stress, jauh_dari_tuhan) VALUES (?, ?,?)";
         try(PreparedStatement statement = connection.prepareStatement(sql)){
-            statement.setInt(1,level_stress);
-            statement.setInt(2,jauh_dari_tuhan);
+            statement.setInt(1, id_user);
+            statement.setInt(2,level_stress);
+            statement.setInt(3,jauh_dari_tuhan);
             statement.executeUpdate();
         }
         catch (SQLException sqlException){
