@@ -1,8 +1,6 @@
+package tubes.pbo.maven.Classes;
 
-package Classes;
-
-public class Reminder extends ReminderFitur {
-
+public class Reminder {
     private String title;
     private int hour;
     private int minute;
